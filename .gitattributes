@@ -1,0 +1,4 @@
+# .gitattributes
+*.bas binary
+*.cls binary
+*.xlsm binary
