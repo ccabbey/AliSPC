@@ -70,6 +70,43 @@ Public Sub PaintAreaFill(ByVal canvas As ChartCanvas, ByVal spec As SeriesSpec)
     s.Format.Line.Visible = msoFalse
 End Sub
 
+'=== 原语三：横轴刻度标签 =====================================================
+' 隐藏线和标记的散点系列，逐点 DataLabel 显示文本，位置在轴下方。
+' 原生刻度标签由 Builder 用 ";;;" 空格式隐藏，本系列接管显示。
+
+'@Description "画横轴标签系列：点位于 (x, 0)，标签在点下方，文本与颜色逐点取自 Spec。"
+Public Sub PaintAxisLabels(ByVal canvas As ChartCanvas, ByVal spec As SeriesSpec)
+    Dim s As Excel.Series
+    Set s = canvas.Chart.SeriesCollection.NewSeries
+
+    s.Name = spec.Name
+    s.ChartType = xlXYScatterLinesNoMarkers
+    s.AxisGroup = xlPrimary
+    s.XValues = spec.xs
+    s.Values = spec.ys
+    s.MarkerStyle = xlMarkerStyleNone
+    s.Format.Line.Visible = msoFalse
+
+    Dim lb As Variant
+    Dim lc As Variant
+    lb = spec.Labels
+    lc = spec.LabelColors
+
+    Dim i As Long
+    For i = 1 To s.Points.Count
+        With s.Points(i)
+            .HasDataLabel = True
+            With .DataLabel
+                .Position = xlLabelPositionBelow
+                .text = CStr(lb(LBound(lb) + i - 1))
+                .Font.Name = "Arial"
+                .Font.Size = 9
+                .Font.color = CLng(lc(LBound(lc) + i - 1))
+            End With
+        End With
+    Next i
+End Sub
+
 '=== 副横轴：分两步 ===========================================================
 ' 拆开是因为旧项目验证过的顺序是「先让副轴显示出来 -> 修复主轴 -> 再配置副轴 -> 最后隐藏」。
 ' 一次性配置完再隐藏，主横轴刻度有不刷新的历史问题。
@@ -167,4 +204,6 @@ Private Function ToMsoDash(ByVal style As LineDashEnum) As MsoLineDashStyle
             ToMsoDash = msoLineSolid
     End Select
 End Function
+
+
 

@@ -57,7 +57,7 @@ Private Type THistogram
     BinWidth As Double
     EdgeLow As Double
     EdgeHigh As Double
-    Edges As Variant                ' 0..k，共 k+1 个边界
+    edges As Variant                ' 0..k，共 k+1 个边界
     Counts As Variant               ' 0..k-1，共 k 个频数
     MaxCount As Long
 End Type
@@ -105,8 +105,8 @@ Public Property Get source() As SampleData
     Set source = this.source
 End Property
 
-Public Property Get Edges() As Variant
-    Edges = this.Edges
+Public Property Get edges() As Variant
+    edges = this.edges
 End Property
 
 Public Property Get Counts() As Variant
@@ -133,20 +133,20 @@ Public Sub StepPolygon(ByRef xs As Variant, ByRef ys As Variant)
     ReDim ay(1 To n)
 
     p = 1
-    ax(p) = this.Edges(0)
+    ax(p) = this.edges(0)
     ay(p) = 0#
 
     For i = 0 To k - 1
         p = p + 1
-        ax(p) = this.Edges(i)
+        ax(p) = this.edges(i)
         ay(p) = this.Counts(i)
 
         p = p + 1
-        ax(p) = this.Edges(i + 1)
+        ax(p) = this.edges(i + 1)
         ay(p) = this.Counts(i)
 
         p = p + 1
-        ax(p) = this.Edges(i + 1)
+        ax(p) = this.edges(i + 1)
         ay(p) = 0#
     Next i
 
@@ -252,7 +252,7 @@ Public Sub Build(ByVal source As SampleData, _
         e(i) = lo + i * this.BinWidth
     Next i
     e(k) = hi                         ' 末边界钉死，消除浮点漂移
-    this.Edges = e
+    this.edges = e
 
     ReDim c(0 To k - 1)
     For i = 1 To source.Count

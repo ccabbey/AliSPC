@@ -5,7 +5,7 @@ Option Explicit
 
 Private Const DEMO_SHEET As String = "AliSPC_Demo"
 Private Const CHART_NAME As String = "CapabilityDemoChart"
-Private Const EXPECTED_SERIES As Long = 9      ' Shade+Profile+Curve+Mean+LSL+USL+Target+2 条 Sigma
+Private Const EXPECTED_SERIES As Long = 10     ' Shade+Profile+Curve+Mean+LSL+USL+Target+2×Sigma+AxisLabels
 
 '@Description "主入口：在 AliSPC_Demo 表上画一张完整能力图。可反复运行，会清场重绘。"
 Public Sub DrawCapabilityDemo()
@@ -13,12 +13,14 @@ Public Sub DrawCapabilityDemo()
     Set src = SampleData.FromArray(Sheets("Sheet3").Range("A1:A196"))
 
     Dim spec As CapabilitySpec
-    Set spec = CapabilitySpec.Create(38.5, 39.4, 38.95)
+    Set spec = CapabilitySpec.Create()
 
     Dim opt As PlotOptions
     Set opt = PlotOptions.Create
-    opt.BinPolicy = binFixedWidth
-    opt.BinParam = 0.065
+    opt.Decimals = 2
+    opt.BinPolicy = binSqrt
+    opt.BinParam = 10
+    opt.YAxisMode = yAxisDensity
     opt.Title = "Process Capability - Demo"
 
     Dim ws As Worksheet
@@ -27,7 +29,7 @@ Public Sub DrawCapabilityDemo()
     Dim co As ChartObject
     Set co = DemoChart(ws)
 
-    CapabilityPlotBuilder.Plot co, src, spec, opt
+    CapabilityPlotBuilder.Plot co, src, spec, opt, ws
     co.Activate
 End Sub
 
@@ -143,4 +145,6 @@ Private Function DemoValues() As Variant
     v(57) = 10.242: v(58) = 9.938: v(59) = 9.846: v(60) = 10.94
     DemoValues = v
 End Function
+
+
 

@@ -7,16 +7,23 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Attribute VB_Ext_KEY = "Rubberduck" ,"Predeclared Class Module"
 '@ModuleDescription "能力图绘制选项。纯配置对象，不引用任何 Excel 对象模型。"
 '@PredeclaredId
 '@Folder("src.Build")
 Option Explicit
 
+Public Enum YAxisModeEnum
+    yAxisFrequency = 0      ' 频数（默认）
+    yAxisDensity = 1        ' 概率密度
+End Enum
+
 Private Type TPlotOptions
     BinPolicy As BinPolicyEnum
     BinParam As Double
     CurvePoints As Long
+    YAxisMode As YAxisModeEnum
+    Decimals As Long
+    ShowAxisLabels As Boolean
     ShowDistCurve As Boolean
     ShowTol As Boolean
     ShowTarget As Boolean
@@ -44,6 +51,9 @@ Private Sub Class_Initialize()
     this.BinPolicy = binSturges
     this.BinParam = 0#
     this.CurvePoints = 200
+    this.YAxisMode = yAxisFrequency
+    this.Decimals = 3
+    this.ShowAxisLabels = True
     this.ShowDistCurve = True
     this.ShowTol = True
     this.ShowTarget = True
@@ -89,6 +99,35 @@ End Property
 Public Property Let CurvePoints(ByVal value As Long)
     If value < 2 Then value = 2
     this.CurvePoints = value
+End Property
+
+'@Description "纵轴刻度：频数（默认）或概率密度。密度 = 频数 / (N * BinWidth)。"
+Public Property Get YAxisMode() As YAxisModeEnum
+    YAxisMode = this.YAxisMode
+End Property
+
+Public Property Let YAxisMode(ByVal value As YAxisModeEnum)
+    this.YAxisMode = value
+End Property
+
+'@Description "显示精度：横轴刻度、统计框、辅助线标签的小数位数（0~10）。数据系列保持全精度。"
+Public Property Get Decimals() As Long
+    Decimals = this.Decimals
+End Property
+
+Public Property Let Decimals(ByVal value As Long)
+    If value < 0 Then value = 0
+    If value > 10 Then value = 10
+    this.Decimals = value
+End Property
+
+'@Description "True 时用隐藏散点系列的数据标签接管横轴刻度（bin 边界 + 辅助线精确值）；False 保留原生刻度标签。"
+Public Property Get ShowAxisLabels() As Boolean
+    ShowAxisLabels = this.ShowAxisLabels
+End Property
+
+Public Property Let ShowAxisLabels(ByVal value As Boolean)
+    this.ShowAxisLabels = value
 End Property
 
 Public Property Get ShowDistCurve() As Boolean
@@ -207,3 +246,5 @@ End Property
 Public Property Let SigmaColor(ByVal value As Long)
     this.SigmaColor = value
 End Property
+
+

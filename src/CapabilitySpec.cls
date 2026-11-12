@@ -18,6 +18,7 @@ Attribute VB_Exposed = False
 '   CapabilitySpec.Create(10, Empty)       只有下限
 '   CapabilitySpec.Create(Empty, 20)       只有上限
 '   CapabilitySpec.Create(10, 20, 15)      双侧 + 目标值（Cpm 需要）
+'   CapabilitySpec.Create()               无规格限（不画规格线 / 目标线）
 '
 ' SigmaMultiplier 默认 6，即 Cp = Tolerance / (6 * sigma)、
 ' Cpk 的单侧分母为 3 * sigma。改成 3 就是 3-sigma 能力口径；
@@ -29,7 +30,6 @@ Private Const DEFAULT_SIGMA_MULTIPLIER As Double = 6#
 
 Private Const ERR_NOT_NUMERIC As Long = vbObjectError + 1301
 Private Const ERR_ORDER As Long = vbObjectError + 1302
-Private Const ERR_NO_SPEC As Long = vbObjectError + 1303
 Private Const ERR_MULTIPLIER As Long = vbObjectError + 1304
 
 Private Type TCapabilitySpec
@@ -46,8 +46,8 @@ Private this As TCapabilitySpec
 
 '=== 工厂 =====================================================================
 
-Public Function Create(ByVal lowerSpec As Variant, _
-                       ByVal upperSpec As Variant, _
+Public Function Create(Optional ByVal lowerSpec As Variant = Empty, _
+                       Optional ByVal upperSpec As Variant = Empty, _
                        Optional ByVal target As Variant = Empty) As CapabilitySpec
     Dim result As CapabilitySpec
     Set result = New CapabilitySpec
@@ -126,11 +126,7 @@ Public Sub Initialize(ByVal lowerSpec As Variant, _
     this.HasTarget = Not IsEmpty(v)
     If this.HasTarget Then this.target = CDbl(v)
 
-    If Not this.HasLower And Not this.HasUpper Then
-        Err.Raise ERR_NO_SPEC, "CapabilitySpec.Initialize", _
-                  "上下规格限至少要指定一个。"
-    End If
-
+    ' 允许上下限都不指定：此时只描述分布，不产生规格线 / 目标线。
     If this.HasLower And this.HasUpper Then
         If this.lowerSpec >= this.upperSpec Then
             Err.Raise ERR_ORDER, "CapabilitySpec.Initialize", _
@@ -172,5 +168,7 @@ Private Function ReadOptional(ByVal value As Variant, _
 
     ReadOptional = CDbl(value)
 End Function
+
+
 
 

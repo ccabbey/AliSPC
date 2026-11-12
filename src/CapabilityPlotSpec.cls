@@ -7,7 +7,6 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-
 '@Folder("src.Spec")
 '==============================================================================
 ' CapabilityPlotSpec - Minitab 风格过程能力图的完整绘制意图
@@ -17,13 +16,14 @@ Attribute VB_Exposed = False
 '   左侧（src.Model）只产出本对象，不知道 Excel 存在；
 '   右侧（src.Render）只消费本对象，不知道统计学存在。
 '
-' 六个语义系列 -> 两个绘图原语 -> 8~10 个真实 Excel Series：
+' 七个语义系列 -> 绘图原语 -> 9~11 个实际 Excel Series
 '   HistoShade    areaFill     副轴   1 个（已定：不做超差着色）
 '   HistoProfile  xyLine       主轴   1 个
 '   DistCurve     xyLine       主轴   1 个（已定：只画 overall）
 '   MeanLine      xyLine(2点)  主轴   1 个
 '   TolLines      xyLine(2点)  主轴   2~3 个（LSL / USL / 可选 Target）
 '   SigmaLines    xyLine(2点)  主轴   0 或 2 个（Mean ± 3*sigma）
+'   AxisLabels    xyLine(隐藏)  可选   1 个（横轴刻度标签接管，todo4）
 '
 ' 语义层用具名属性而不是泛型集合 + 字符串键：编译期可查、IntelliSense 可见、
 ' 拼错系列名会直接编译失败而不是运行时静默画错。
@@ -45,6 +45,7 @@ Private Type TCapabilityPlotSpec
     MeanLine As SeriesSpec
     TolLines As Collection
     SigmaLines As Collection
+    AxisLabels As SeriesSpec
     xAxis As AxisSpec
     yAxis As AxisSpec
     StatBox As AnnotationSpec
@@ -153,6 +154,14 @@ Public Property Set SigmaLines(ByVal value As Collection)
     End If
 End Property
 
+Public Property Get AxisLabels() As SeriesSpec
+    Set AxisLabels = this.AxisLabels
+End Property
+
+Public Property Set AxisLabels(ByVal value As SeriesSpec)
+    Set this.AxisLabels = value
+End Property
+
 '=== 展平 =====================================================================
 
 ' 按 z-order 展平成渲染层唯一需要认识的集合。
@@ -177,6 +186,8 @@ Public Function AllSeries() As Collection
         AppendIfPresent result, item
     Next item
 
+    AppendIfPresent result, this.AxisLabels
+
     Set AllSeries = result
 End Function
 
@@ -189,3 +200,4 @@ End Property
 Private Sub AppendIfPresent(ByVal target As Collection, ByVal spec As SeriesSpec)
     If Not spec Is Nothing Then target.Add spec
 End Sub
+

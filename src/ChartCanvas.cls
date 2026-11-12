@@ -7,7 +7,6 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-Attribute VB_Ext_KEY = "Rubberduck" ,"Predeclared Class Module"
 '@ModuleDescription "把一个 ChartObject 包装成画布：清场、加系列、配轴、加标注。只认识 Spec，不认识统计。"
 '@PredeclaredId
 '@Folder("src.Render")
@@ -141,6 +140,8 @@ Public Function AddSeries(ByVal spec As SeriesSpec) As Long
         Case RenderKindEnum.renderAreaFill
             Painters.PaintAreaFill Me, spec
             this.HasArea = True
+        Case RenderKindEnum.renderAxisLabels
+            Painters.PaintAxisLabels Me, spec
         Case Else
             Err.Raise ERR_BAD_RENDER, "ChartCanvas.AddSeries", _
                       "未知的 RenderAs：" & CStr(spec.RenderAs) & "。"
@@ -378,6 +379,3 @@ Private Function ToMsoParagraphAlign(ByVal a As TextAlignEnum) As MsoParagraphAl
             ToMsoParagraphAlign = msoAlignLeft
     End Select
 End Function
-
-
-

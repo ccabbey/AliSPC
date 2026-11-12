@@ -24,6 +24,7 @@ Attribute VB_Exposed = False
 '   renderXYLine   -> xlXYScatterLines / SmoothNoMarkers，主数值轴
 '                     histoProfile、distCurve、mean、Tol、Sigma3x 全走这个
 '   renderAreaFill -> xlArea，副分类轴（x10000），仅 histoShade 走这个
+'   renderAxisLabels -> 隐藏散点 + 逐点 DataLabel（横轴刻度标签接管）
 '   竖直线不是独立原语，它就是只有 2 个点的 renderXYLine。
 '
 ' 注意：distCurve 必须是 renderXYLine，绝不能用原生折线图 xlLine ——
@@ -37,10 +38,12 @@ Private Const ERR_NOT_1D As Long = vbObjectError + 1502
 Private Const ERR_LENGTH As Long = vbObjectError + 1503
 Private Const ERR_TRANSPARENCY As Long = vbObjectError + 1504
 Private Const ERR_WEIGHT As Long = vbObjectError + 1505
+Private Const ERR_LABELS As Long = vbObjectError + 1506
 
 Public Enum RenderKindEnum
     renderXYLine = 0
     renderAreaFill = 1
+    renderAxisLabels = 2
 End Enum
 
 Public Enum AxisGroupEnum
@@ -68,6 +71,8 @@ Private Type TSeriesSpec
     DashStyle As LineDashEnum
     FillColor As Long
     FillTransparency As Single
+    Labels As Variant
+    LabelColors As Variant
 End Type
 
 Private this As TSeriesSpec
@@ -110,6 +115,8 @@ Private Sub Class_Initialize()
     this.DashStyle = LineDashEnum.dashSolid
     this.FillColor = RGB(150, 150, 150)
     this.FillTransparency = 0.35
+    this.Labels = Empty
+    this.LabelColors = Empty
 End Sub
 
 '=== 属性 =====================================================================
@@ -226,11 +233,44 @@ Public Property Let FillTransparency(ByVal value As Single)
     this.FillTransparency = value
 End Property
 
+' 仅 renderAxisLabels 有意义：与 xs 等长的显示文本 / 颜色数组。Empty = 无。
+Public Property Get Labels() As Variant
+    Labels = this.Labels
+End Property
+
+Public Property Let Labels(ByVal value As Variant)
+    ValidateLabelArray value, "Labels"
+    this.Labels = value
+End Property
+
+Public Property Get LabelColors() As Variant
+    LabelColors = this.LabelColors
+End Property
+
+Public Property Let LabelColors(ByVal value As Variant)
+    ValidateLabelArray value, "LabelColors"
+    this.LabelColors = value
+End Property
+
 Public Property Get PointCount() As Long
     PointCount = ElementCount(this.xs)
 End Property
 
 '=== 内部实现 =================================================================
+
+Private Sub ValidateLabelArray(ByVal value As Variant, ByVal fieldName As String)
+    If IsEmpty(value) Then Exit Sub
+    If Not IsArray(value) Then
+        Err.Raise ERR_LABELS, "SeriesSpec." & fieldName, fieldName & " 必须是一维数组。"
+    End If
+    If HasSecondDimension(value) Then
+        Err.Raise ERR_LABELS, "SeriesSpec." & fieldName, fieldName & " 必须是一维数组。"
+    End If
+    If ElementCount(value) <> ElementCount(this.xs) Then
+        Err.Raise ERR_LABELS, "SeriesSpec." & fieldName, _
+                  fieldName & " 长度必须与 Xs 一致：" & ElementCount(value) & " vs " & ElementCount(this.xs) & "。"
+    End If
+End Sub
 
 Private Sub ValidatePair(ByVal xs As Variant, ByVal ys As Variant)
     Dim nx As Long
@@ -299,3 +339,5 @@ Private Function HasSecondDimension(ByVal Arr As Variant) As Boolean
     Err.Clear
     On Error GoTo 0
 End Function
+
+
