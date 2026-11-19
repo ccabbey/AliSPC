@@ -44,6 +44,7 @@ Public Enum RenderKindEnum
     renderXYLine = 0
     renderAreaFill = 1
     renderAxisLabels = 2
+    renderDataLabels = 3
 End Enum
 
 Public Enum AxisGroupEnum
@@ -71,7 +72,7 @@ Private Type TSeriesSpec
     DashStyle As LineDashEnum
     FillColor As Long
     FillTransparency As Single
-    Labels As Variant
+    labels As Variant
     LabelColors As Variant
 End Type
 
@@ -115,7 +116,7 @@ Private Sub Class_Initialize()
     this.DashStyle = LineDashEnum.dashSolid
     this.FillColor = RGB(150, 150, 150)
     this.FillTransparency = 0.35
-    this.Labels = Empty
+    this.labels = Empty
     this.LabelColors = Empty
 End Sub
 
@@ -234,13 +235,13 @@ Public Property Let FillTransparency(ByVal value As Single)
 End Property
 
 ' 仅 renderAxisLabels 有意义：与 xs 等长的显示文本 / 颜色数组。Empty = 无。
-Public Property Get Labels() As Variant
-    Labels = this.Labels
+Public Property Get labels() As Variant
+    labels = this.labels
 End Property
 
-Public Property Let Labels(ByVal value As Variant)
+Public Property Let labels(ByVal value As Variant)
     ValidateLabelArray value, "Labels"
-    this.Labels = value
+    this.labels = value
 End Property
 
 Public Property Get LabelColors() As Variant
@@ -339,5 +340,7 @@ Private Function HasSecondDimension(ByVal Arr As Variant) As Boolean
     Err.Clear
     On Error GoTo 0
 End Function
+
+
 
 

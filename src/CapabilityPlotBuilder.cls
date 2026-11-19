@@ -17,7 +17,7 @@ Private Const ERR_NO_OPTIONS As Long = vbObjectError + 1903
 
 Private Const X_PAD_RATIO As Double = 0.02      ' 统计框右边缘内缩比例（不再用于轴范围）
 Private Const Y_HEADROOM As Double = 1.25       ' 纵轴顶部留白，给统计框腾位置
-Private Const MAX_AXIS_LABELS As Long = 10      ' bin 边界标签抽稀上限
+Private Const OUTLIER_LABEL_RATIO As Double = 0.001  '离群值标签比例系数（频数占比小于此值认为是离群值，会增加单独的data label)
 Private Const LABEL_EPS_RATIO As Double = 0.02  ' 辅助线标签去重半径（占轴跨度比例）
 
 '=== 装配（纯函数，不碰 Excel）===============================================
@@ -107,7 +107,9 @@ Public Function BuildSpec(ByVal source As SampleData, _
 
     Dim result As CapabilityPlotSpec
     Set result = New CapabilityPlotSpec
+    ' 标题优先级：显式 opt.Title > 数据源表头（SampleData.Header）。
     result.Title = opt.Title
+    If Len(result.Title) = 0 Then result.Title = source.header
 
     '--- 系列。添加顺序就是绘制顺序，填色必须最先，否则盖住轮廓线 ---
     Dim s As SeriesSpec
@@ -123,6 +125,46 @@ Public Function BuildSpec(ByVal source As SampleData, _
     s.LineColor = opt.ProfileColor
     s.LineWeight = 1.25
     Set result.HistoProfile = s
+
+    Dim outlierXs() As Double
+    Dim outlierYs() As Double
+    Dim outlierLabels() As String
+    Dim outlierColors() As Long
+    Dim outlierCount As Long
+    Dim outlierLimit As Double
+    outlierLimit = source.Count * OUTLIER_LABEL_RATIO
+    ReDim outlierXs(1 To hist.BinCount)
+    ReDim outlierYs(1 To hist.BinCount)
+    ReDim outlierLabels(1 To hist.BinCount)
+    ReDim outlierColors(1 To hist.BinCount)
+
+    Dim i As Long
+    For i = 0 To hist.BinCount - 1
+        If hist.Counts(i) > 0 Then
+            If CDbl(hist.Counts(i)) <= outlierLimit Then
+                outlierCount = outlierCount + 1
+                outlierXs(outlierCount) = (CDbl(hist.edges(i)) + CDbl(hist.edges(i + 1))) / 2#
+                outlierYs(outlierCount) = CDbl(hist.Counts(i))
+                If opt.YAxisMode = yAxisDensity Then
+                    outlierYs(outlierCount) = outlierYs(outlierCount) / (source.Count * hist.BinWidth)
+                End If
+                outlierLabels(outlierCount) = CStr(hist.Counts(i))
+                outlierColors(outlierCount) = opt.ProfileColor
+            End If
+        End If
+    Next i
+
+    If outlierCount > 0 Then
+        ReDim Preserve outlierXs(1 To outlierCount)
+        ReDim Preserve outlierYs(1 To outlierCount)
+        ReDim Preserve outlierLabels(1 To outlierCount)
+        ReDim Preserve outlierColors(1 To outlierCount)
+        Set s = SeriesSpec.Create("outlierLabels", outlierXs, outlierYs, _
+                                  RenderKindEnum.renderDataLabels, AxisGroupEnum.axisPrimary)
+        s.labels = outlierLabels
+        s.LabelColors = outlierColors
+        Set result.outlierLabels = s
+    End If
 
     If opt.ShowDistCurve Then
         Set s = SeriesSpec.Create("distCurve", cx, cy, _
@@ -165,7 +207,7 @@ Public Function BuildSpec(ByVal source As SampleData, _
     End If
 
     '--- 轴。范围必须显式给定，ChartCanvas 会拒绝自动缩放的轴 ---
-    '--- todo4：横轴标签系列（bin 边界抽稀 + 辅助线精确值，epsilon 去重）---
+    '--- 轴标签系列（bin 边界全显示 + 辅助线精确值，epsilon 去重）---
     If opt.ShowAxisLabels Then
         Set result.AxisLabels = BuildAxisLabels(hist, source, spec, opt, xLo, xHi, fmt)
     End If
@@ -189,7 +231,7 @@ Public Function BuildSpec(ByVal source As SampleData, _
     If opt.ShowStatBox Then
         Set result.StatBox = AnnotationSpec.Create(StatText(source, spec, fmt), _
                                                    xHi - pad, yTop * 0.98, _
-                                                   TextAlignEnum.alignRight, 9, "Arial")
+                                                   9, "Arial")
     End If
 
     Set BuildSpec = result
@@ -267,8 +309,8 @@ Private Function VerticalLine(ByVal Name As String, ByVal xValue As Double, _
     Set VerticalLine = result
 End Function
 
-' todo4：收集横轴标签。bin 边界按 MAX_AXIS_LABELS 抽稀；辅助线精确值按
-' 规格 -> 均值 -> Sigma 的优先级加入，与已有标签距离 < eps 时跳过。
+' 收集轴标签：bin 边界全部显示（eps=0 恒不去重）；辅助线精确值按 eps 去重。
+' 辅助标签（规格/均值/Sigma）与已有标签距离 < eps 时跳过，避免近似重复。
 Private Function BuildAxisLabels(ByVal hist As Histogram, _
                                  ByVal source As SampleData, _
                                  ByVal spec As CapabilitySpec, _
@@ -290,16 +332,12 @@ Private Function BuildAxisLabels(ByVal hist As Histogram, _
     Dim eps As Double
     eps = (xHi - xLo) * LABEL_EPS_RATIO
 
-    ' 1) bin 边界（用 Edges 的钉住值，与柱形严格一致）
+    ' 1) bin 边界：每条都显示（含末边界），eps=0 保证不被去重吞掉。
     Dim edges As Variant
     edges = hist.edges
     Dim k As Long
-    Dim stride As Long
-    stride = Int(hist.BinCount / MAX_AXIS_LABELS) + 1
     For k = 0 To hist.BinCount
-        If k Mod stride = 0 Then
-            AddLabel xs, ys, lb, lc, cnt, CDbl(edges(k)), fmt, eps, RGB(60, 60, 60)
-        End If
+        AddLabel xs, ys, lb, lc, cnt, CDbl(edges(k)), fmt, 0#, RGB(60, 60, 60)
     Next k
 
     ' 2) 辅助线精确值，颜色与对应线一致
@@ -337,7 +375,7 @@ Private Function BuildAxisLabels(ByVal hist As Histogram, _
     Dim result As SeriesSpec
     Set result = SeriesSpec.Create("axisLabels", ax, ay, _
                                    RenderKindEnum.renderAxisLabels, AxisGroupEnum.axisPrimary)
-    result.Labels = al
+    result.labels = al
     result.LabelColors = ac
     Set BuildAxisLabels = result
 End Function
@@ -392,5 +430,11 @@ Private Function FormatNumber(ByVal value As Variant, ByVal fmt As String) As St
         FormatNumber = Format$(CDbl(value), fmt)
     End If
 End Function
+
+
+
+
+
+
 
 

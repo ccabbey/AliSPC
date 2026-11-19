@@ -18,6 +18,7 @@ Attribute VB_Exposed = False
 '
 ' X / Y 是【数据坐标】，不是像素、不是图表百分比。渲染层负责用
 ' ChartCanvas.DataToPixelX/Y 换算成 Shape 位置。这样标注在缩放图表、
+' 锚点约定：(X, Y) 固定为文本框右上角（渲染层右缘对齐、顶边对齐）。
 ' 改轴范围时仍然锚在正确的数据位置上。
 '
 ' 多行文本用 vbCrLf 分隔。渲染层建 Shape 后要设 .TextFrame2.WordWrap = False
@@ -28,17 +29,10 @@ Option Explicit
 Private Const ERR_EMPTY_TEXT As Long = vbObjectError + 1701
 Private Const ERR_FONT_SIZE As Long = vbObjectError + 1702
 
-Public Enum TextAlignEnum
-    alignLeft = 0
-    alignCenter = 1
-    alignRight = 2
-End Enum
-
 Private Type TAnnotationSpec
     text As String
     X As Double
     Y As Double
-    align As TextAlignEnum
     fontName As String
     fontSize As Single
     FontColor As Long
@@ -52,12 +46,11 @@ Private this As TAnnotationSpec
 Public Function Create(ByVal text As String, _
                        ByVal X As Double, _
                        ByVal Y As Double, _
-                       Optional ByVal align As TextAlignEnum = 0, _
                        Optional ByVal fontSize As Single = 9, _
                        Optional ByVal fontName As String = "Arial") As AnnotationSpec
     Dim result As AnnotationSpec
     Set result = New AnnotationSpec
-    result.Initialize text, X, Y, align, fontSize, fontName
+    result.Initialize text, X, Y, fontSize, fontName
     Set Create = result
 End Function
 
@@ -65,7 +58,6 @@ Private Sub Class_Initialize()
     this.text = ""
     this.X = 0#
     this.Y = 0#
-    this.align = TextAlignEnum.alignLeft
     this.fontName = "Arial"
     this.fontSize = 9
     this.FontColor = RGB(0, 0, 0)
@@ -96,14 +88,6 @@ End Property
 
 Public Property Let Y(ByVal value As Double)
     this.Y = value
-End Property
-
-Public Property Get align() As TextAlignEnum
-    align = this.align
-End Property
-
-Public Property Let align(ByVal value As TextAlignEnum)
-    this.align = value
 End Property
 
 Public Property Get fontName() As String
@@ -160,7 +144,6 @@ End Property
 Public Sub Initialize(ByVal text As String, _
                        ByVal X As Double, _
                        ByVal Y As Double, _
-                       ByVal align As TextAlignEnum, _
                        ByVal fontSize As Single, _
                        ByVal fontName As String)
     If Len(text) = 0 Then
@@ -174,7 +157,6 @@ Public Sub Initialize(ByVal text As String, _
     this.text = text
     this.X = X
     this.Y = Y
-    this.align = align
     this.fontSize = fontSize
     If Len(fontName) = 0 Then
         this.fontName = "Arial"
@@ -182,3 +164,5 @@ Public Sub Initialize(ByVal text As String, _
         this.fontName = fontName
     End If
 End Sub
+
+

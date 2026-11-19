@@ -10,7 +10,7 @@ Private Const EXPECTED_SERIES As Long = 10     ' Shade+Profile+Curve+Mean+LSL+US
 '@Description "主入口：在 AliSPC_Demo 表上画一张完整能力图。可反复运行，会清场重绘。"
 Public Sub DrawCapabilityDemo()
     Dim src As SampleData
-    Set src = SampleData.FromArray(Sheets("Sheet3").Range("A1:A196"))
+    Set src = SampleData.FromArray(Sheets("Sheet3").Range("A1:A11000"), True)   ' 首行表头
 
     Dim spec As CapabilitySpec
     Set spec = CapabilitySpec.Create()
@@ -18,10 +18,10 @@ Public Sub DrawCapabilityDemo()
     Dim opt As PlotOptions
     Set opt = PlotOptions.Create
     opt.Decimals = 2
-    opt.BinPolicy = binSqrt
-    opt.BinParam = 10
+    opt.BinPolicy = binFixedCount
+    opt.BinParam = 20
     opt.YAxisMode = yAxisDensity
-    opt.Title = "Process Capability - Demo"
+    ' Title 留空：自动回退到数据源表头（SampleData.Header）
 
     Dim ws As Worksheet
     Set ws = DemoSheet()
@@ -145,6 +145,8 @@ Private Function DemoValues() As Variant
     v(57) = 10.242: v(58) = 9.938: v(59) = 9.846: v(60) = 10.94
     DemoValues = v
 End Function
+
+
 
 
 

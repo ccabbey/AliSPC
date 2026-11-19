@@ -7,7 +7,6 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
-
 '@Folder("src.Model")
 '@PredeclaredId
 '==============================================================================
@@ -35,6 +34,7 @@ Attribute VB_Exposed = False
 '   Dim s As SampleData
 '   Set s = SampleData.FromArray(Sheets("Data").Range("A2:A500"))
 '   Set s = SampleData.FromArray(Sheets("Data").Range("A2:A500").Value2)  ' 等价
+'   Set s = SampleData.FromArray(Sheets("Data").Range("A1:A500"), True)   ' 首行表头 -> Header
 '   Debug.Print s.Count, s.Mean, s.StdevOverall, s.StdevWithin
 '==============================================================================
 Option Explicit
@@ -53,16 +53,19 @@ Private Type TSample
     StdevWithin As Double
     minValue As Double
     maxValue As Double
+    header As String
 End Type
 
 Private this As TSample
 
 '=== 工厂 =====================================================================
 
-Public Function FromArray(ByVal data As Variant) As SampleData
+Public Function FromArray(ByVal data As Variant, _
+                          Optional ByVal hasHeader As Boolean = False, _
+                          Optional ByVal header As String = "") As SampleData
     Dim result As SampleData
     Set result = New SampleData
-    result.Initialize data
+    result.Initialize data, hasHeader, header
     Set FromArray = result
 End Function
 
@@ -97,9 +100,16 @@ Public Property Get Values() As Variant
     Values = this.Values
 End Property
 
+' 数据源表头文本（首行标题）。无表头时为 ""。
+Public Property Get header() As String
+    header = this.header
+End Property
+
 '=== 内部实现 =================================================================
 
-Public Sub Initialize(ByVal data As Variant)
+Public Sub Initialize(ByVal data As Variant, _
+                      Optional ByVal hasHeader As Boolean = False, _
+                      Optional ByVal header As String = "")
     Dim flat() As Double
     Dim dims As Long
     Dim total As Long
@@ -111,6 +121,9 @@ Public Sub Initialize(ByVal data As Variant)
     Dim cols As Long
     Dim src As Object
     Dim areaCount As Long
+    Dim skipFirst As Boolean
+
+    this.header = ""
 
     ' Range 入口：late-bound 取数，不引入 Excel 类型。
     If IsObject(data) Then
@@ -176,24 +189,41 @@ Public Sub Initialize(ByVal data As Variant)
         Err.Raise ERR_EMPTY, "SampleData.Initialize", "数组没有元素。"
     End If
 
+    ' 表头：hasHeader 取遍历序首元素文本并跳过；否则采用显式传入的 header。
+    skipFirst = False
+    If hasHeader Then
+        If dims = 1 Then
+            this.header = HeaderText(data(LBound(data, 1)))
+        Else
+            this.header = HeaderText(data(LBound(data, 1), LBound(data, 2)))
+        End If
+        skipFirst = True
+    ElseIf Len(header) > 0 Then
+        this.header = header
+    End If
+
     ReDim flat(1 To total)
     n = 0
 
     If dims = 1 Then
         For i = LBound(data, 1) To UBound(data, 1)
-            v = data(i)
-            If IsAcceptable(v) Then
-                n = n + 1
-                flat(n) = CDbl(v)
+            If Not (skipFirst And i = LBound(data, 1)) Then
+                v = data(i)
+                If IsAcceptable(v) Then
+                    n = n + 1
+                    flat(n) = CDbl(v)
+                End If
             End If
         Next i
     Else
         For i = LBound(data, 1) To UBound(data, 1)
             For j = LBound(data, 2) To UBound(data, 2)
-                v = data(i, j)
-                If IsAcceptable(v) Then
-                    n = n + 1
-                    flat(n) = CDbl(v)
+                If Not (skipFirst And i = LBound(data, 1) And j = LBound(data, 2)) Then
+                    v = data(i, j)
+                    If IsAcceptable(v) Then
+                        n = n + 1
+                        flat(n) = CDbl(v)
+                    End If
                 End If
             Next j
         Next i
@@ -250,6 +280,15 @@ Private Sub ComputeStats()
     this.StdevWithin = (mrSum / (this.Count - 1)) / D2_MR
 End Sub
 
+' 表头单元格 -> 文本。错误/Null/Empty/对象一律视为无表头（返回 ""）。
+Private Function HeaderText(ByVal v As Variant) As String
+    If IsError(v) Then Exit Function
+    If IsNull(v) Then Exit Function
+    If IsEmpty(v) Then Exit Function
+    If IsObject(v) Then Exit Function
+    HeaderText = CStr(v)
+End Function
+
 Private Function IsAcceptable(ByVal v As Variant) As Boolean
     ' 顺序要紧：IsNumeric(Null) 返回 Null，直接放进 If 会触发错误 94
     If IsError(v) Then Exit Function
@@ -275,7 +314,3 @@ Private Function ArrayDimensions(ByVal Arr As Variant) As Long
 
     ArrayDimensions = d - 1
 End Function
-
-
-
-

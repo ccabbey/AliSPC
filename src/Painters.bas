@@ -47,6 +47,38 @@ End Sub
 ' 只承担 histoShade。X 被归一化后放大到 1..10001，落在一条隐藏的时间刻度副横轴上；
 ' 纵轴与主轴强制同范围，保证填色和散点轮廓逐点重合。
 
+Public Sub PaintDataLabels(ByVal canvas As ChartCanvas, ByVal spec As SeriesSpec)
+    Dim s As Excel.Series
+    Set s = canvas.Chart.SeriesCollection.NewSeries
+
+    s.Name = spec.Name
+    s.ChartType = xlXYScatterLinesNoMarkers
+    s.AxisGroup = xlPrimary
+    s.XValues = spec.xs
+    s.Values = spec.ys
+    s.MarkerStyle = xlMarkerStyleNone
+    s.Format.Line.Visible = msoFalse
+
+    Dim labels As Variant
+    Dim colors As Variant
+    labels = spec.labels
+    colors = spec.LabelColors
+
+    Dim i As Long
+    For i = 1 To s.Points.Count
+        With s.Points(i)
+            .HasDataLabel = True
+            With .DataLabel
+                .Position = xlLabelPositionAbove
+                .text = CStr(labels(LBound(labels) + i - 1))
+                .Font.Name = "Arial"
+                .Font.Size = 9
+                .Font.color = CLng(colors(LBound(colors) + i - 1))
+            End With
+        End With
+    Next i
+End Sub
+
 Public Sub PaintAreaFill(ByVal canvas As ChartCanvas, ByVal spec As SeriesSpec)
     Dim s As Excel.Series
     Set s = canvas.Chart.SeriesCollection.NewSeries
@@ -89,7 +121,7 @@ Public Sub PaintAxisLabels(ByVal canvas As ChartCanvas, ByVal spec As SeriesSpec
 
     Dim lb As Variant
     Dim lc As Variant
-    lb = spec.Labels
+    lb = spec.labels
     lc = spec.LabelColors
 
     Dim i As Long
@@ -204,6 +236,10 @@ Private Function ToMsoDash(ByVal style As LineDashEnum) As MsoLineDashStyle
             ToMsoDash = msoLineSolid
     End Select
 End Function
+
+
+
+
 
 
 

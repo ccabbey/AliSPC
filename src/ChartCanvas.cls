@@ -142,6 +142,8 @@ Public Function AddSeries(ByVal spec As SeriesSpec) As Long
             this.HasArea = True
         Case RenderKindEnum.renderAxisLabels
             Painters.PaintAxisLabels Me, spec
+        Case RenderKindEnum.renderDataLabels
+            Painters.PaintDataLabels Me, spec
         Case Else
             Err.Raise ERR_BAD_RENDER, "ChartCanvas.AddSeries", _
                       "未知的 RenderAs：" & CStr(spec.RenderAs) & "。"
@@ -170,6 +172,9 @@ Private Sub ApplyPrimaryCategory(ByVal cht As Excel.Chart)
         .MinimumScale = this.XMin
         .MaximumScaleIsAuto = False
         .MaximumScale = this.XMax
+
+        ' 纵轴永远交于横轴最小值处（图形左缘），负 X 数据不会把纵轴挤到中间。
+        .Crosses = xlAxisCrossesMinimum
 
         If this.xAxis.HasMajorUnit Then
             .MajorUnitIsAuto = False
@@ -311,7 +316,6 @@ Public Sub AddAnnotation(ByVal spec As AnnotationSpec)
         .MarginTop = 0
         .MarginBottom = 0
         .VerticalAnchor = msoAnchorTop
-        .HorizontalAnchor = ToMsoAnchor(spec.align)
 
         With .TextRange
             ' Spec 里用 vbCrLf 计行，Excel 文本框只认 vbLf。
@@ -319,7 +323,6 @@ Public Sub AddAnnotation(ByVal spec As AnnotationSpec)
             .Font.Name = spec.fontName
             .Font.Size = spec.fontSize
             .Font.Fill.ForeColor.RGB = spec.FontColor
-            .ParagraphFormat.Alignment = ToMsoParagraphAlign(spec.align)
         End With
     End With
 
@@ -333,14 +336,8 @@ Public Sub AddAnnotation(ByVal spec As AnnotationSpec)
     px = Me.DataToPixelX(spec.X)
     py = Me.DataToPixelY(spec.Y)
 
-    Select Case spec.align
-        Case TextAlignEnum.alignCenter
-            shp.Left = px - shp.Width / 2
-        Case TextAlignEnum.alignRight
-            shp.Left = px - shp.Width
-        Case Else
-            shp.Left = px
-    End Select
+    ' (X, Y) 固定为文本框右上角锚点：右缘对齐 px，顶边对齐 py。
+    shp.Left = px - shp.Width
     shp.Top = py
 End Sub
 
@@ -358,24 +355,6 @@ Public Function DataToPixelY(ByVal Y As Double) As Single
     DataToPixelY = CSng(pa.InsideTop + (this.YMax - Y) / (this.YMax - this.YMin) * pa.InsideHeight)
 End Function
 
-Private Function ToMsoAnchor(ByVal a As TextAlignEnum) As MsoHorizontalAnchor
-    Select Case a
-        Case TextAlignEnum.alignCenter
-            ToMsoAnchor = msoAnchorCenter
-        Case TextAlignEnum.alignRight
-            ToMsoAnchor = msoAnchorCenter
-        Case Else
-            ToMsoAnchor = msoAnchorCenter
-    End Select
-End Function
 
-Private Function ToMsoParagraphAlign(ByVal a As TextAlignEnum) As MsoParagraphAlignment
-    Select Case a
-        Case TextAlignEnum.alignCenter
-            ToMsoParagraphAlign = msoAlignCenter
-        Case TextAlignEnum.alignRight
-            ToMsoParagraphAlign = msoAlignRight
-        Case Else
-            ToMsoParagraphAlign = msoAlignLeft
-    End Select
-End Function
+
+

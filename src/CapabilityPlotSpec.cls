@@ -46,6 +46,7 @@ Private Type TCapabilityPlotSpec
     TolLines As Collection
     SigmaLines As Collection
     AxisLabels As SeriesSpec
+    outlierLabels As SeriesSpec
     xAxis As AxisSpec
     yAxis As AxisSpec
     StatBox As AnnotationSpec
@@ -162,6 +163,14 @@ Public Property Set AxisLabels(ByVal value As SeriesSpec)
     Set this.AxisLabels = value
 End Property
 
+Public Property Get outlierLabels() As SeriesSpec
+    Set outlierLabels = this.outlierLabels
+End Property
+
+Public Property Set outlierLabels(ByVal value As SeriesSpec)
+    Set this.outlierLabels = value
+End Property
+
 '=== 展平 =====================================================================
 
 ' 按 z-order 展平成渲染层唯一需要认识的集合。
@@ -187,6 +196,7 @@ Public Function AllSeries() As Collection
     Next item
 
     AppendIfPresent result, this.AxisLabels
+    AppendIfPresent result, this.outlierLabels
 
     Set AllSeries = result
 End Function
@@ -200,4 +210,5 @@ End Property
 Private Sub AppendIfPresent(ByVal target As Collection, ByVal spec As SeriesSpec)
     If Not spec Is Nothing Then target.Add spec
 End Sub
+
 
