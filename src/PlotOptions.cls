@@ -11,6 +11,7 @@ Attribute VB_Exposed = False
 '@PredeclaredId
 '@Folder("src.Build")
 Option Explicit
+' Modified: 2026-11-28 01:12:03
 
 Public Enum YAxisModeEnum
     yAxisFrequency = 0      ' 频数（默认）
@@ -22,6 +23,7 @@ Private Type TPlotOptions
     BinParam As Double
     CurvePoints As Long
     YAxisMode As YAxisModeEnum
+    OutlierLabelRatio As Double
     Decimals As Long
     ShowAxisLabels As Boolean
     ShowDistCurve As Boolean
@@ -52,6 +54,7 @@ Private Sub Class_Initialize()
     this.BinParam = 0#
     this.CurvePoints = 200
     this.YAxisMode = yAxisFrequency
+    this.OutlierLabelRatio = 0.001
     this.Decimals = 3
     this.ShowAxisLabels = True
     this.ShowDistCurve = True
@@ -108,6 +111,16 @@ End Property
 
 Public Property Let YAxisMode(ByVal value As YAxisModeEnum)
     this.YAxisMode = value
+End Property
+
+Public Property Get OutlierLabelRatio() As Double
+    OutlierLabelRatio = this.OutlierLabelRatio
+End Property
+
+Public Property Let OutlierLabelRatio(ByVal value As Double)
+    If value < 0# Then value = 0#
+    If value > 1# Then value = 1#
+    this.OutlierLabelRatio = value
 End Property
 
 '@Description "显示精度：横轴刻度、统计框、辅助线标签的小数位数（0~10）。数据系列保持全精度。"

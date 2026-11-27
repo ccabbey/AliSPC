@@ -11,13 +11,13 @@ Attribute VB_Exposed = False
 '@PredeclaredId
 '@Folder("src.Build")
 Option Explicit
+' Modified: 2026-11-28 01:12:03
 
 Private Const ERR_NO_SAMPLE As Long = vbObjectError + 1901
 Private Const ERR_NO_OPTIONS As Long = vbObjectError + 1903
 
 Private Const X_PAD_RATIO As Double = 0.02      ' 统计框右边缘内缩比例（不再用于轴范围）
 Private Const Y_HEADROOM As Double = 1.25       ' 纵轴顶部留白，给统计框腾位置
-Private Const OUTLIER_LABEL_RATIO As Double = 0.001  '离群值标签比例系数（频数占比小于此值认为是离群值，会增加单独的data label)
 Private Const LABEL_EPS_RATIO As Double = 0.02  ' 辅助线标签去重半径（占轴跨度比例）
 
 '=== 装配（纯函数，不碰 Excel）===============================================
@@ -132,7 +132,7 @@ Public Function BuildSpec(ByVal source As SampleData, _
     Dim outlierColors() As Long
     Dim outlierCount As Long
     Dim outlierLimit As Double
-    outlierLimit = source.Count * OUTLIER_LABEL_RATIO
+    outlierLimit = source.Count * opt.OutlierLabelRatio
     ReDim outlierXs(1 To hist.BinCount)
     ReDim outlierYs(1 To hist.BinCount)
     ReDim outlierLabels(1 To hist.BinCount)
@@ -148,7 +148,7 @@ Public Function BuildSpec(ByVal source As SampleData, _
                 If opt.YAxisMode = yAxisDensity Then
                     outlierYs(outlierCount) = outlierYs(outlierCount) / (source.Count * hist.BinWidth)
                 End If
-                outlierLabels(outlierCount) = CStr(hist.Counts(i))
+                outlierLabels(outlierCount) = "n=" & CStr(hist.Counts(i))
                 outlierColors(outlierCount) = opt.ProfileColor
             End If
         End If
