@@ -1,3 +1,4 @@
 .vscode
-~$*
-*.doccls
+release
+src/*.doccls
+todo.md

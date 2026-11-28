@@ -312,16 +312,16 @@ Private Sub ValidatePair(ByVal xs As Variant, ByVal ys As Variant)
     End If
 End Sub
 
-Private Function ElementCount(ByVal Arr As Variant) As Long
+Private Function ElementCount(ByVal arr As Variant) As Long
     Dim lb As Long
     Dim ub As Long
 
-    If IsEmpty(Arr) Then Exit Function
-    If Not IsArray(Arr) Then Exit Function
+    If IsEmpty(arr) Then Exit Function
+    If Not IsArray(arr) Then Exit Function
 
     On Error Resume Next
-    lb = LBound(Arr, 1)
-    ub = UBound(Arr, 1)
+    lb = LBound(arr, 1)
+    ub = UBound(arr, 1)
     If Err.Number <> 0 Then
         Err.Clear
         On Error GoTo 0
@@ -332,10 +332,10 @@ Private Function ElementCount(ByVal Arr As Variant) As Long
     ElementCount = ub - lb + 1
 End Function
 
-Private Function HasSecondDimension(ByVal Arr As Variant) As Boolean
-    Dim Probe As Long
+Private Function HasSecondDimension(ByVal arr As Variant) As Boolean
+    Dim probe As Long
     On Error Resume Next
-    Probe = UBound(Arr, 2)
+    probe = UBound(arr, 2)
     HasSecondDimension = (Err.Number = 0)
     Err.Clear
     On Error GoTo 0

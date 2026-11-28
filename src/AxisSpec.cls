@@ -30,7 +30,7 @@ Private Type TAxisSpec
     Min As Variant
     Max As Variant
     MajorUnit As Variant
-    Title As String
+    title As String
     numberFormat As String
     Visible As Boolean
 End Type
@@ -42,12 +42,12 @@ Private this As TAxisSpec
 Public Function Create(Optional ByVal minValue As Variant = Empty, _
                        Optional ByVal maxValue As Variant = Empty, _
                        Optional ByVal unitValue As Variant = Empty, _
-                       Optional ByVal Title As String = "", _
+                       Optional ByVal title As String = "", _
                        Optional ByVal numberFormat As String = "General", _
                        Optional ByVal Visible As Boolean = True) As AxisSpec
     Dim result As AxisSpec
     Set result = New AxisSpec
-    result.Initialize minValue, maxValue, unitValue, Title, numberFormat, Visible
+    result.Initialize minValue, maxValue, unitValue, title, numberFormat, Visible
     Set Create = result
 End Function
 
@@ -55,7 +55,7 @@ Private Sub Class_Initialize()
     this.Min = Empty
     this.Max = Empty
     this.MajorUnit = Empty
-    this.Title = ""
+    this.title = ""
     this.numberFormat = "General"
     this.Visible = True
 End Sub
@@ -106,16 +106,16 @@ Public Property Get HasMajorUnit() As Boolean
     HasMajorUnit = Not IsEmpty(this.MajorUnit)
 End Property
 
-Public Property Get Title() As String
-    Title = this.Title
+Public Property Get title() As String
+    title = this.title
 End Property
 
-Public Property Let Title(ByVal value As String)
-    this.Title = value
+Public Property Let title(ByVal value As String)
+    this.title = value
 End Property
 
 Public Property Get TitleVisible() As Boolean
-    TitleVisible = (Len(this.Title) > 0)
+    TitleVisible = (Len(this.title) > 0)
 End Property
 
 Public Property Get numberFormat() As String
@@ -143,13 +143,13 @@ End Property
 Public Sub Initialize(ByVal minValue As Variant, _
                        ByVal maxValue As Variant, _
                        ByVal unitValue As Variant, _
-                       ByVal Title As String, _
+                       ByVal title As String, _
                        ByVal numberFormat As String, _
                        ByVal Visible As Boolean)
     this.Min = NormalizeNumeric(minValue, "Min")
     this.Max = NormalizeNumeric(maxValue, "Max")
     this.MajorUnit = NormalizeNumeric(unitValue, "MajorUnit")
-    this.Title = Title
+    this.title = title
     If Len(numberFormat) = 0 Then
         this.numberFormat = "General"
     Else

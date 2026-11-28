@@ -11,7 +11,7 @@ Attribute VB_Exposed = False
 '@PredeclaredId
 '@Folder("src.Build")
 Option Explicit
-' Modified: 2026-11-28 01:12:03
+' Modified: 2026-11-28 22:41:15
 
 Public Enum YAxisModeEnum
     yAxisFrequency = 0      ' 频数（默认）
@@ -31,10 +31,11 @@ Private Type TPlotOptions
     ShowTarget As Boolean
     ShowSigma As Boolean
     ShowStatBox As Boolean
-    Title As String
+    title As String
     ProfileColor As Long
     ShadeColor As Long
     ShadeTransparency As Single
+    GroupedShadeTransparency As Single
     CurveColor As Long
     MeanColor As Long
     TolColor As Long
@@ -47,6 +48,34 @@ Private this As TPlotOptions
 '@Description "返回一份默认选项。调用方随后用 Property Let 逐项覆盖。"
 Public Function Create() As PlotOptions
     Set Create = New PlotOptions      ' 默认值全部写在 Class_Initialize，工厂不改 this
+End Function
+
+Public Function Clone() As PlotOptions
+    Dim result As PlotOptions
+    Set result = New PlotOptions
+    result.BinPolicy = this.BinPolicy
+    result.BinParam = this.BinParam
+    result.CurvePoints = this.CurvePoints
+    result.YAxisMode = this.YAxisMode
+    result.OutlierLabelRatio = this.OutlierLabelRatio
+    result.Decimals = this.Decimals
+    result.ShowAxisLabels = this.ShowAxisLabels
+    result.ShowDistCurve = this.ShowDistCurve
+    result.ShowTol = this.ShowTol
+    result.ShowTarget = this.ShowTarget
+    result.ShowSigma = this.ShowSigma
+    result.ShowStatBox = this.ShowStatBox
+    result.title = this.title
+    result.ProfileColor = this.ProfileColor
+    result.ShadeColor = this.ShadeColor
+    result.ShadeTransparency = this.ShadeTransparency
+    result.GroupedShadeTransparency = this.GroupedShadeTransparency
+    result.CurveColor = this.CurveColor
+    result.MeanColor = this.MeanColor
+    result.TolColor = this.TolColor
+    result.TargetColor = this.TargetColor
+    result.SigmaColor = this.SigmaColor
+    Set Clone = result
 End Function
 
 Private Sub Class_Initialize()
@@ -62,10 +91,11 @@ Private Sub Class_Initialize()
     this.ShowTarget = True
     this.ShowSigma = True
     this.ShowStatBox = True
-    this.Title = ""
+    this.title = ""
     this.ProfileColor = RGB(60, 60, 60)
     this.ShadeColor = RGB(217, 217, 217)
     this.ShadeTransparency = 0#
+    this.GroupedShadeTransparency = 0.3
     this.CurveColor = RGB(0, 90, 180)
     this.MeanColor = RGB(0, 140, 0)
     this.TolColor = RGB(200, 0, 0)
@@ -184,12 +214,12 @@ Public Property Let ShowStatBox(ByVal value As Boolean)
     this.ShowStatBox = value
 End Property
 
-Public Property Get Title() As String
-    Title = this.Title
+Public Property Get title() As String
+    title = this.title
 End Property
 
-Public Property Let Title(ByVal value As String)
-    this.Title = value
+Public Property Let title(ByVal value As String)
+    this.title = value
 End Property
 
 '--- 颜色 -------------------------------------------------------------------
@@ -218,6 +248,17 @@ Public Property Let ShadeTransparency(ByVal value As Single)
     If value < 0# Then value = 0#
     If value > 1# Then value = 1#
     this.ShadeTransparency = value
+End Property
+
+'@Description "多组叠加直方图 shade 的透明度；0 为不透明，1 为完全透明，默认 0.3，取值限制在 0~1"
+Public Property Get GroupedShadeTransparency() As Single
+    GroupedShadeTransparency = this.GroupedShadeTransparency
+End Property
+
+Public Property Let GroupedShadeTransparency(ByVal value As Single)
+    If value < 0# Then value = 0#
+    If value > 1# Then value = 1#
+    this.GroupedShadeTransparency = value
 End Property
 
 Public Property Get CurveColor() As Long

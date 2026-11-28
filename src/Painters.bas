@@ -32,7 +32,7 @@ Public Sub PaintXYLine(ByVal canvas As ChartCanvas, ByVal spec As SeriesSpec)
     End If
 
     s.XValues = spec.xs
-    s.Values = spec.ys
+    s.values = spec.ys
     s.MarkerStyle = xlMarkerStyleNone
 
     With s.Format.Line
@@ -55,7 +55,7 @@ Public Sub PaintDataLabels(ByVal canvas As ChartCanvas, ByVal spec As SeriesSpec
     s.ChartType = xlXYScatterLinesNoMarkers
     s.AxisGroup = xlPrimary
     s.XValues = spec.xs
-    s.Values = spec.ys
+    s.values = spec.ys
     s.MarkerStyle = xlMarkerStyleNone
     s.Format.Line.Visible = msoFalse
 
@@ -90,7 +90,7 @@ Public Sub PaintAreaFill(ByVal canvas As ChartCanvas, ByVal spec As SeriesSpec)
     ' 先写 Values 再写 XValues 也可以，但副轴此刻还是普通分类轴，
     ' 真正的按值定位要等 ConfigureAreaAxis 把 CategoryType 改成 xlTimeScale。
     s.XValues = ToScaledXs(spec.xs, canvas.XMin, canvas.XMax)
-    s.Values = spec.ys
+    s.values = spec.ys
 
     With s.Format.Fill
         .Visible = msoTrue
@@ -115,7 +115,7 @@ Public Sub PaintAxisLabels(ByVal canvas As ChartCanvas, ByVal spec As SeriesSpec
     s.ChartType = xlXYScatterLinesNoMarkers
     s.AxisGroup = xlPrimary
     s.XValues = spec.xs
-    s.Values = spec.ys
+    s.values = spec.ys
     s.MarkerStyle = xlMarkerStyleNone
     s.Format.Line.Visible = msoFalse
 

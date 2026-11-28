@@ -8,6 +8,7 @@ Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = True
 Attribute VB_Exposed = False
 '@Folder("src.Model")
+' Modified: 2026-11-28 18:54:56
 '@PredeclaredId
 '==============================================================================
 ' Histogram - 等宽分箱、阶梯多边形、正态拟合曲线（纯计算，零 Excel 引用）
@@ -53,13 +54,13 @@ End Enum
 Private Type THistogram
     source As SampleData
     policy As BinPolicyEnum
-    BinCount As Long
+    binCount As Long
     BinWidth As Double
     EdgeLow As Double
     EdgeHigh As Double
     edges As Variant                ' 0..k，共 k+1 个边界
-    Counts As Variant               ' 0..k-1，共 k 个频数
-    MaxCount As Long
+    counts As Variant               ' 0..k-1，共 k 个频数
+    maxCount As Long
 End Type
 
 Private this As THistogram
@@ -77,8 +78,8 @@ End Function
 
 '=== 只读属性 =================================================================
 
-Public Property Get BinCount() As Long
-    BinCount = this.BinCount
+Public Property Get binCount() As Long
+    binCount = this.binCount
 End Property
 
 Public Property Get BinWidth() As Double
@@ -93,8 +94,8 @@ Public Property Get EdgeHigh() As Double
     EdgeHigh = this.EdgeHigh
 End Property
 
-Public Property Get MaxCount() As Long
-    MaxCount = this.MaxCount
+Public Property Get maxCount() As Long
+    maxCount = this.maxCount
 End Property
 
 Public Property Get policy() As BinPolicyEnum
@@ -109,8 +110,8 @@ Public Property Get edges() As Variant
     edges = this.edges
 End Property
 
-Public Property Get Counts() As Variant
-    Counts = this.Counts
+Public Property Get counts() As Variant
+    counts = this.counts
 End Property
 
 '=== 绘图数据产出 =============================================================
@@ -127,7 +128,7 @@ Public Sub StepPolygon(ByRef xs As Variant, ByRef ys As Variant)
     Dim p As Long
     Dim k As Long
 
-    k = this.BinCount
+    k = this.binCount
     n = 3 * k + 1
     ReDim ax(1 To n)
     ReDim ay(1 To n)
@@ -139,11 +140,11 @@ Public Sub StepPolygon(ByRef xs As Variant, ByRef ys As Variant)
     For i = 0 To k - 1
         p = p + 1
         ax(p) = this.edges(i)
-        ay(p) = this.Counts(i)
+        ay(p) = this.counts(i)
 
         p = p + 1
         ax(p) = this.edges(i + 1)
-        ay(p) = this.Counts(i)
+        ay(p) = this.counts(i)
 
         p = p + 1
         ax(p) = this.edges(i + 1)
@@ -152,6 +153,77 @@ Public Sub StepPolygon(ByRef xs As Variant, ByRef ys As Variant)
 
     xs = ax
     ys = ay
+End Sub
+
+' 在指定公共范围内重新分箱，保证多组面积图共享完全相同的 X 分类数组。
+Public Sub StepPolygonUniform(ByVal low As Double, _
+                              ByVal high As Double, _
+                              ByVal binCount As Long, _
+                              ByRef xs As Variant, _
+                              ByRef ys As Variant, _
+                              ByRef maxCount As Long)
+    If high <= low Then
+        Err.Raise ERR_PARAM, "Histogram.StepPolygonUniform", _
+                  "公共分箱上界必须大于下界。"
+    End If
+    If binCount < 1 Then
+        Err.Raise ERR_PARAM, "Histogram.StepPolygonUniform", _
+                  "公共分箱数量必须至少为 1。"
+    End If
+
+    Dim width As Double
+    Dim counts() As Long
+    Dim ax() As Double
+    Dim ay() As Double
+    Dim values As Variant
+    Dim n As Long
+    Dim k As Long
+    Dim i As Long
+    Dim p As Long
+    Dim idx As Long
+    Dim v As Double
+    Dim peak As Long
+
+    width = (high - low) / CDbl(binCount)
+    k = binCount
+    n = 3 * k + 1
+    ReDim counts(0 To k - 1)
+    ReDim ax(1 To n)
+    ReDim ay(1 To n)
+    values = this.source.values
+
+    For i = 1 To this.source.Count
+        v = CDbl(values(i))
+        If v >= low And v <= high Then
+            idx = Int((v - low) / width)
+            If idx = k Then idx = k - 1
+            counts(idx) = counts(idx) + 1
+        End If
+    Next i
+
+    p = 1
+    ax(p) = low
+    ay(p) = 0#
+
+    For i = 0 To k - 1
+        p = p + 1
+        ax(p) = low + CDbl(i) * width
+        ay(p) = CDbl(counts(i))
+
+        p = p + 1
+        ax(p) = low + CDbl(i + 1) * width
+        ay(p) = CDbl(counts(i))
+
+        p = p + 1
+        ax(p) = low + CDbl(i + 1) * width
+        ay(p) = 0#
+
+        If counts(i) > peak Then peak = counts(i)
+    Next i
+
+    xs = ax
+    ys = ay
+    maxCount = peak
 End Sub
 
 ' 正态拟合曲线，纵轴已按 N * BinWidth 缩放到频数尺度。
@@ -242,7 +314,7 @@ Public Sub Build(ByVal source As SampleData, _
     If k < 1 Then k = 1
     If k > MAX_BINS Then k = MAX_BINS
 
-    this.BinCount = k
+    this.binCount = k
     this.BinWidth = span / k          ' 重新均分：保证严格等宽
     this.EdgeLow = lo
     this.EdgeHigh = hi
@@ -256,18 +328,18 @@ Public Sub Build(ByVal source As SampleData, _
 
     ReDim c(0 To k - 1)
     For i = 1 To source.Count
-        v = source.Values(i)
+        v = source.values(i)
         idx = Int((v - lo) / this.BinWidth)
         ' 区间约定 [left, right)，末箱闭合；越界值夹到首/末箱
         If idx < 0 Then idx = 0
         If idx >= k Then idx = k - 1
         c(idx) = c(idx) + 1
     Next i
-    this.Counts = c
+    this.counts = c
 
-    this.MaxCount = 0
+    this.maxCount = 0
     For i = 0 To k - 1
-        If c(i) > this.MaxCount Then this.MaxCount = c(i)
+        If c(i) > this.maxCount Then this.maxCount = c(i)
     Next i
 End Sub
 
@@ -316,3 +388,5 @@ End Function
 Private Function CeilLng(ByVal X As Double) As Long
     CeilLng = -Int(-X)
 End Function
+
+

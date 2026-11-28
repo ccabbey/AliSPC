@@ -36,9 +36,10 @@ Attribute VB_Exposed = False
 ' AllSeries 里多展平两项即可，渲染层零改动。这是本设计预留的唯一扩展点。
 '==============================================================================
 Option Explicit
+' Modified: 2026-11-28 01:16:53
 
 Private Type TCapabilityPlotSpec
-    Title As String
+    title As String
     HistoShade As SeriesSpec
     HistoProfile As SeriesSpec
     DistCurve As SeriesSpec
@@ -47,6 +48,8 @@ Private Type TCapabilityPlotSpec
     SigmaLines As Collection
     AxisLabels As SeriesSpec
     outlierLabels As SeriesSpec
+    GroupSeries As Collection
+    LegendVisible As Boolean
     xAxis As AxisSpec
     yAxis As AxisSpec
     StatBox As AnnotationSpec
@@ -55,21 +58,23 @@ End Type
 Private this As TCapabilityPlotSpec
 
 Private Sub Class_Initialize()
-    this.Title = ""
+    this.title = ""
     Set this.TolLines = New Collection
     Set this.SigmaLines = New Collection
+    Set this.GroupSeries = New Collection
+    this.LegendVisible = False
     Set this.xAxis = AxisSpec.Create
     Set this.yAxis = AxisSpec.Create(0)      ' 频数轴下限钉在 0
 End Sub
 
 '=== 图表级 ===================================================================
 
-Public Property Get Title() As String
-    Title = this.Title
+Public Property Get title() As String
+    title = this.title
 End Property
 
-Public Property Let Title(ByVal value As String)
-    this.Title = value
+Public Property Let title(ByVal value As String)
+    this.title = value
 End Property
 
 Public Property Get xAxis() As AxisSpec
@@ -171,6 +176,26 @@ Public Property Set outlierLabels(ByVal value As SeriesSpec)
     Set this.outlierLabels = value
 End Property
 
+Public Property Get GroupSeries() As Collection
+    Set GroupSeries = this.GroupSeries
+End Property
+
+Public Property Set GroupSeries(ByVal value As Collection)
+    If value Is Nothing Then
+        Set this.GroupSeries = New Collection
+    Else
+        Set this.GroupSeries = value
+    End If
+End Property
+
+Public Property Get LegendVisible() As Boolean
+    LegendVisible = this.LegendVisible
+End Property
+
+Public Property Let LegendVisible(ByVal value As Boolean)
+    this.LegendVisible = value
+End Property
+
 '=== 展平 =====================================================================
 
 ' 按 z-order 展平成渲染层唯一需要认识的集合。
@@ -179,6 +204,7 @@ End Property
 Public Function AllSeries() As Collection
     Dim result As Collection
     Dim item As SeriesSpec
+    Dim groupItem As SeriesSpec
 
     Set result = New Collection
 
@@ -197,6 +223,10 @@ Public Function AllSeries() As Collection
 
     AppendIfPresent result, this.AxisLabels
     AppendIfPresent result, this.outlierLabels
+
+    For Each groupItem In this.GroupSeries
+        AppendIfPresent result, groupItem
+    Next groupItem
 
     Set AllSeries = result
 End Function

@@ -11,6 +11,7 @@ Attribute VB_Exposed = False
 '@PredeclaredId
 '@Folder("src.Render")
 Option Explicit
+' Modified: 2026-11-28 01:16:53
 
 Private Const ERR_NO_TARGET As Long = vbObjectError + 1801
 Private Const ERR_NO_AXISPEC As Long = vbObjectError + 1802
@@ -182,7 +183,7 @@ Private Sub ApplyPrimaryCategory(ByVal cht As Excel.Chart)
         End If
 
         .HasTitle = this.xAxis.TitleVisible
-        If this.xAxis.TitleVisible Then .AxisTitle.text = this.xAxis.Title
+        If this.xAxis.TitleVisible Then .AxisTitle.text = this.xAxis.title
 
         .TickLabels.numberFormat = this.xAxis.numberFormat
         .TickLabels.Font.Name = "Arial"
@@ -212,7 +213,7 @@ Private Sub ApplyPrimaryValue(ByVal cht As Excel.Chart)
         End If
 
         .HasTitle = this.yAxis.TitleVisible
-        If this.yAxis.TitleVisible Then .AxisTitle.text = this.yAxis.Title
+        If this.yAxis.TitleVisible Then .AxisTitle.text = this.yAxis.title
 
         .TickLabels.numberFormat = this.yAxis.numberFormat
         .TickLabels.Font.Name = "Arial"
@@ -257,20 +258,20 @@ End Function
 '=== 图表外观 ================================================================
 
 '@Description "标题、图例、网格线、绘图区边框。与轴刻度无关的那部分外观。"
-Public Sub FormatFrame(ByVal Title As String)
+Public Sub FormatFrame(ByVal title As String, Optional ByVal showLegend As Boolean = False)
     Dim cht As Excel.Chart
     Set cht = Me.Chart
 
-    If Len(Title) > 0 Then
+    If Len(title) > 0 Then
         cht.HasTitle = True
-        cht.ChartTitle.text = Title
+        cht.ChartTitle.text = title
         cht.ChartTitle.Font.Name = "Arial"
         cht.ChartTitle.Font.Size = 12
     Else
         cht.HasTitle = False
     End If
 
-    cht.HasLegend = False
+    cht.HasLegend = showLegend
 
     On Error Resume Next
     cht.SetElement msoElementPrimaryValueGridLinesNone
@@ -337,7 +338,7 @@ Public Sub AddAnnotation(ByVal spec As AnnotationSpec)
     py = Me.DataToPixelY(spec.Y)
 
     ' (X, Y) 固定为文本框右上角锚点：右缘对齐 px，顶边对齐 py。
-    shp.Left = px - shp.Width
+    shp.Left = px - shp.width
     shp.Top = py
 End Sub
 
